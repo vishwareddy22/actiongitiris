@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Flower Classification AI | FastAPI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent-setosa: #10b981;
+            --accent-versicolor: #f59e0b;
+            --accent-virginica: #ec4899;
+            --glow: 0 0 25px rgba(99, 102, 241, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.75rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Preset buttons */
+        .preset-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #fff;
+        }
+
+        /* Input Controls */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .val-display {
+            font-family: monospace;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #818cf8;
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary);
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            width: 75px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.9rem;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.25 ease;
+            margin-top: 0.75rem;
+            box-shadow: var(--glow);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Prediction Result Box */
+        .result-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 280px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .result-empty icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .prediction-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding-top: 0.5rem;
+        }
+
+        .species-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .species-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 800;
+            text-transform: capitalize;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
+        }
+
+        .confidence-tag {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .confidence-tag strong {
+            color: #fff;
+        }
+
+        /* Probabilities Breakdown */
+        .probs-container {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+
+        .prob-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .prob-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .prob-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .prob-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+            text-transform: capitalize;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Class Specific Colors */
+        .setosa { color: var(--accent-setosa); }
+        .bg-setosa { background: var(--accent-setosa); }
+        .border-setosa { border-color: var(--accent-setosa); }
+
+        .versicolor { color: var(--accent-versicolor); }
+        .bg-versicolor { background: var(--accent-versicolor); }
+        .border-versicolor { border-color: var(--accent-versicolor); }
+
+        .virginica { color: var(--accent-virginica); }
+        .bg-virginica { background: var(--accent-virginica); }
+        .border-virginica { border-color: var(--accent-virginica); }
+
+        footer {
+            margin-top: 3rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        footer code {
+            color: #818cf8;
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo-badge">🌸 Machine Learning API</div>
+            <h1>Iris Species Predictor</h1>
+            <p class="subtitle">FastAPI Web Application powered by scikit-learn & joblib models</p>
+        </header>
+
+        <div class="grid-layout">
+            <!-- Left Card: Input Parameters -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Measurements (cm)</h2>
+                </div>
+
+                <!-- Presets -->
+                <div class="preset-group">
+                    <span style="font-size:0.8rem; color:var(--text-muted); align-self:center;">Presets:</span>
+                    <button class="preset-btn" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">Setosa</button>
+                    <button class="preset-btn" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">Versicolor</button>
+                    <button class="preset-btn" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">Virginica</button>
+                </div>
+
+                <form id="iris-form" action="/predict-form" method="POST">
+                    <!-- Sepal Length -->
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="sepal_length">Sepal Length</label>
+                            <span class="val-display" id="sl-val">5.1</span>
+                        </div>
+                        <div class="input-row">
+                            <input type="range" id="sl-range" min="4.0" max="8.0" step="0.1" value="5.1" oninput="syncVal('sl', this.value)">
+                            <input type="number" id="sepal_length" name="sepal_length" min="4.0" max="8.0" step="0.1" value="5.1" oninput="syncVal('sl', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Sepal Width -->
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="sepal_width">Sepal Width</label>
+                            <span class="val-display" id="sw-val">3.5</span>
+                        </div>
+                        <div class="input-row">
+                            <input type="range" id="sw-range" min="2.0" max="5.0" step="0.1" value="3.5" oninput="syncVal('sw', this.value)">
+                            <input type="number" id="sepal_width" name="sepal_width" min="2.0" max="5.0" step="0.1" value="3.5" oninput="syncVal('sw', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Petal Length -->
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="petal_length">Petal Length</label>
+                            <span class="val-display" id="pl-val">1.4</span>
+                        </div>
+                        <div class="input-row">
+                            <input type="range" id="pl-range" min="1.0" max="7.0" step="0.1" value="1.4" oninput="syncVal('pl', this.value)">
+                            <input type="number" id="petal_length" name="petal_length" min="1.0" max="7.0" step="0.1" value="1.4" oninput="syncVal('pl', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Petal Width -->
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="petal_width">Petal Width</label>
+                            <span class="val-display" id="pw-val">0.2</span>
+                        </div>
+                        <div class="input-row">
+                            <input type="range" id="pw-range" min="0.1" max="3.0" step="0.1" value="0.2" oninput="syncVal('pw', this.value)">
+                            <input type="number" id="petal_width" name="petal_width" min="0.1" max="3.0" step="0.1" value="0.2" oninput="syncVal('pw', this.value)">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Predict Iris Species</button>
+                </form>
+            </div>
+
+            <!-- Right Card: Prediction Output -->
+            <div class="card" id="output-card">
+                <div class="card-header">
+                    <h2 class="card-title">Prediction Result</h2>
+                </div>
+
+                <div id="result-content">
+                    <div class="result-empty">
+                        <div style="font-size:2.5rem; margin-bottom:0.75rem;">🌺</div>
+                        <p>Adjust the measurement sliders and click <strong>Predict Iris Species</strong> to see real-time classification results.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Built with ⚡ <strong>FastAPI</strong>, <code>model.joblib</code>, <code>scaler.joblib</code> & <code>encoder.joblib</code>
+        </footer>
+    </div>
+
+    <script>
+        function syncVal(key, val) {
+            val = parseFloat(val).toFixed(1);
+            document.getElementById(`${key}-val`).innerText = val;
+            document.getElementById(`${key}-range`).value = val;
+            let numInput = document.getElementById(getFieldId(key));
+            if (numInput) numInput.value = val;
+        }
+
+        function getFieldId(key) {
+            const map = {
+                'sl': 'sepal_length',
+                'sw': 'sepal_width',
+                'pl': 'petal_length',
+                'pw': 'petal_width'
+            };
+            return map[key];
+        }
+
+        function loadPreset(sl, sw, pl, pw) {
+            syncVal('sl', sl);
+            syncVal('sw', sw);
+            syncVal('pl', pl);
+            syncVal('pw', pw);
+            predictIris();
+        }
+
+        async function predictIris() {
+            const data = {
+                sepal_length: parseFloat(document.getElementById('sepal_length').value),
+                sepal_width: parseFloat(document.getElementById('sepal_width').value),
+                petal_length: parseFloat(document.getElementById('petal_length').value),
+                petal_width: parseFloat(document.getElementById('petal_width').value)
+            };
+
+            const container = document.getElementById('result-content');
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const res = await response.json();
+
+                if (res.success) {
+                    renderResult(res);
+                } else {
+                    container.innerHTML = `<div class="result-empty" style="color:#ef4444;"><p>Error: ${res.error}</p></div>`;
+                }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<div class="result-empty" style="color:#ef4444;"><p>Failed to connect to backend server.</p></div>`;
+            }
+        }
+
+        function renderResult(res) {
+            const species = res.prediction.toLowerCase();
+            const confidencePct = (res.confidence * 100).toFixed(1);
+
+            let emoji = '🌺';
+            if (species.includes('setosa')) emoji = '🪷';
+            else if (species.includes('versicolor')) emoji = '🌷';
+            else if (species.includes('virginica')) emoji = '🌸';
+
+            let classStyle = 'setosa';
+            if (species.includes('versicolor')) classStyle = 'versicolor';
+            if (species.includes('virginica')) classStyle = 'virginica';
+
+            let probsHtml = '';
+            for (const [clsName, prob] of Object.entries(res.probabilities)) {
+                const pct = (prob * 100).toFixed(1);
+                let itemStyle = clsName.toLowerCase();
+                probsHtml += `
+                    <div class="prob-item">
+                        <div class="prob-header">
+                            <span>Iris ${clsName}</span>
+                            <span><strong>${pct}%</strong></span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill bg-${itemStyle}" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <div class="prediction-card">
+                    <div class="species-icon border-${classStyle}">
+                        ${emoji}
+                    </div>
+                    <div class="species-badge ${classStyle}">
+                        Iris ${res.prediction}
+                    </div>
+                    <div class="confidence-tag">
+                        Confidence: <strong>${confidencePct}%</strong>
+                    </div>
+
+                    <div class="probs-container">
+                        <div class="prob-title">Species Probabilities</div>
+                        ${probsHtml}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('result-content').innerHTML = html;
+        }
+
+        // Intercept form submit for instant AJAX prediction
+        document.getElementById('iris-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            predictIris();
+        });
+
+        // Run initial prediction on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            predictIris();
+        });
+    </script>
+</body>
+</html>
